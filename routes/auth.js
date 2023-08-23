@@ -4,6 +4,28 @@ const User = require('../models/User');
 
 const router = express.Router();
 
+router.get('/authenticate', async (req, res) => {
+  try {
+    // Obtener el ID del usuario desde el token
+    const token = req.headers.authorization.split(' ')[1];
+    const decodedToken = jwt.verify(token, 'your-secret-key');
+    const userId = decodedToken.userId;
+    const user = await User.findByPk(userId);
+    if (!user) {
+      const authorized = false;
+      return res.status(401).json({ authorized });
+    }
+    const authorized = true;
+    res.status(200).json({ authorized });
+    console.log('estamos permitiendo')
+  } catch (err) {
+    console.log(err.message);
+    const authorized = false;
+    res.status(401).json({ authorized });
+  }
+});
+
+
 router.post('/register', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -36,6 +58,7 @@ router.post('/login', async (req, res) => {
     res.status(200).json({ token });
   } catch (error) {
     res.status(500).json({ error: 'Error logging in.' });
+    console.log(error.message)
   }
 });
 
