@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Event = require('../models/Event');
+const { Op } = require('sequelize');
 
 const router = express.Router();
 
@@ -56,5 +57,35 @@ router.get('/list', async (req, res) => {
     res.status(500).json({ error: 'Error retrieving events.' });
   }
 });
+
+
+router.get('/list/month', async (req, res) => {
+  const { month,year } = req.query;
+  const token = req.headers.authorization.split(' ')[1];
+  const decodedToken = jwt.verify(token, 'your-secret-key');
+  const userId = decodedToken.userId;
+
+  try {
+    const startDate = new Date(year, month-1, 1); // Restamos 1 al mes porque en JavaScript los meses van de 0 a 11
+    const endDate = new Date(year, month, 0); // Obtenemos el último día del mes
+
+    const events = await Event.findAll({
+      where: {
+        userId,
+        startDate: {
+          [Op.gte]: startDate,
+          [Op.lte]: endDate
+        }
+      }
+    });
+
+    res.json(events);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error al obtener eventos.' });
+  }
+});
+
+
 
 module.exports = router;
