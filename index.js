@@ -7,12 +7,11 @@ const cors = require('cors');
 
 const app = express();
 
-const corsOptions = {
-    origin: 'http://localhost:5173', // Reemplaza esto con la URL de tu frontend
-    optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
-  };
+const allowedOrigins = ['http://localhost:5173', 'https://daily-api-ten.vercel.app'];
 
-app.use(cors(corsOptions));
+app.use(cors({
+  origin: allowedOrigins
+}));
 
 app.use(bodyParser.json());
 
