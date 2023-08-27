@@ -7,11 +7,7 @@ const cors = require('cors');
 
 const app = express();
 
-const allowedOrigins = ['http://localhost:5173', 'https://daily-api-ten.vercel.app'];
-
-app.use(cors({
-  origin: allowedOrigins
-}));
+app.use(cors());
 
 app.use(bodyParser.json());
 
