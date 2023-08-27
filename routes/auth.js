@@ -37,6 +37,14 @@ router.post('/register', async (req, res) => {
   }
 });
 
+router.get('/test', async (req, res) => {
+  try {
+    res.status(200).json({ msg : "hola" });
+  } catch (error) {
+    res.status(500).json({ error: 'Error logging in.' });
+  }
+});
+
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
