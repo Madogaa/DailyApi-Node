@@ -12,7 +12,6 @@ const router = express.Router();
 router.post("/create", async (req, res) => {
   try {
     const { title, description, startDate, endDate } = req.body;
-    console.log(startDate + "/" + endDate);
     // Obtener el ID del usuario desde el token
     const token = req.headers.authorization.split(" ")[1];
     const decodedToken = jwt.verify(token, "your-secret-key");
