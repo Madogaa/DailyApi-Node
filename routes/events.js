@@ -1,26 +1,27 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const Event = require('../models/Event');
-const { Op } = require('sequelize');
+const express = require("express");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+const Event = require("../models/Event");
+const { Op } = require("sequelize");
+const dayjs = require("dayjs");
 
 const router = express.Router();
 
 // Asegurarse de que las rutas de eventos requieran autenticación
 
-router.post('/create', async (req, res) => {
+router.post("/create", async (req, res) => {
   try {
     const { title, description, startDate, endDate } = req.body;
-
+    console.log(startDate + "/" + endDate);
     // Obtener el ID del usuario desde el token
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jwt.verify(token, 'your-secret-key');
+    const token = req.headers.authorization.split(" ")[1];
+    const decodedToken = jwt.verify(token, "your-secret-key");
     const userId = decodedToken.userId;
 
     const user = await User.findByPk(userId);
 
     if (!user) {
-      return res.status(401).json({ error: 'User not found.' });
+      return res.status(401).json({ error: "User not found." });
     }
 
     const event = await Event.create({
@@ -31,17 +32,17 @@ router.post('/create', async (req, res) => {
       userId: user.id,
     });
 
-    res.status(201).json({ message: 'Event created successfully.' });
+    res.status(200).json({ createdEvent: event });
   } catch (error) {
-    res.status(500).json({ error: 'Error creating event.'});
+    res.status(500).json({ error: "Error creating event." });
   }
 });
 
-router.get('/list', async (req, res) => {
+router.get("/list", async (req, res) => {
   try {
     // Obtener el ID del usuario desde el token
-    const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jwt.verify(token, 'your-secret-key');
+    const token = req.headers.authorization.split(" ")[1];
+    const decodedToken = jwt.verify(token, "your-secret-key");
     const userId = decodedToken.userId;
 
     const user = await User.findByPk(userId, {
@@ -49,43 +50,79 @@ router.get('/list', async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({ error: 'User not found.' });
+      return res.status(401).json({ error: "User not found." });
     }
 
     res.status(200).json(user.events);
   } catch (error) {
-    res.status(500).json({ error: 'Error retrieving events.' });
+    res.status(500).json({ error: "Error retrieving events." });
   }
 });
 
-
-router.get('/list/month', async (req, res) => {
-  const { month,year } = req.query;
-  const token = req.headers.authorization.split(' ')[1];
-  const decodedToken = jwt.verify(token, 'your-secret-key');
+router.get("/list/month", async (req, res) => {
+  const { month, year } = req.query;
+  const token = req.headers.authorization.split(" ")[1];
+  const decodedToken = jwt.verify(token, "your-secret-key");
   const userId = decodedToken.userId;
 
   try {
-    const startDate = new Date(year, month-1, 1); // Restamos 1 al mes porque en JavaScript los meses van de 0 a 11
-    const endDate = new Date(year, month, 0); // Obtenemos el último día del mes
+    const startDate = dayjs(new Date(year, month - 1, 1)).format("YYYY-MM-DD"); // Restamos 1 al mes porque en JavaScript los meses van de 0 a 11
+    const endDate = dayjs(new Date(year, month, 0)).format("YYYY-MM-DD"); // Obtenemos el último día del mes
 
     const events = await Event.findAll({
       where: {
         userId,
-        startDate: {
-          [Op.gte]: startDate,
-          [Op.lte]: endDate
-        }
-      }
+        [Op.or]: [
+          {
+            startDate: {
+              [Op.between]: [startDate, endDate],
+            },
+          },
+          {
+            endDate: {
+              [Op.between]: [startDate, endDate],
+            },
+          },
+          {
+            [Op.and]: [
+              { startDate: { [Op.lte]: startDate } },
+              { endDate: { [Op.gte]: endDate } },
+            ],
+          },
+        ],
+      },
     });
 
     res.json(events);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Error al obtener eventos.' });
+    res.status(500).json({ message: "Error al obtener eventos." });
   }
 });
 
+router.delete("/delete/:eventId", async (req, res) => {
+  const { eventId } = req.params;
+  const token = req.headers.authorization.split(" ")[1];
+  const decodedToken = jwt.verify(token, "your-secret-key");
+  const userId = decodedToken.userId;
 
+  try {
+    const event = await Event.findOne({
+      where: {
+        userId,
+        id: eventId,
+      },
+    });
+
+    if (!event) {
+      return res.status(404).json({ message: "Evento no encontrado" });
+    }
+
+    await event.destroy();
+    return res.status(200).json({ deletedEvent: event });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
 
 module.exports = router;
