@@ -4,6 +4,7 @@ const User = require("../models/User");
 const Event = require("../models/Event");
 const { Op } = require("sequelize");
 const dayjs = require("dayjs");
+require('dotenv').config();
 
 const router = express.Router();
 
@@ -14,7 +15,7 @@ router.post("/create", async (req, res) => {
     const { title, description, startDate, endDate } = req.body;
     // Obtener el ID del usuario desde el token
     const token = req.headers.authorization.split(" ")[1];
-    const decodedToken = jwt.verify(token, "your-secret-key");
+    const decodedToken = jwt.verify(token, `${process.env.TOKEN_KEY}`);
     const userId = decodedToken.userId;
 
     const user = await User.findByPk(userId);
@@ -41,7 +42,7 @@ router.get("/list", async (req, res) => {
   try {
     // Obtener el ID del usuario desde el token
     const token = req.headers.authorization.split(" ")[1];
-    const decodedToken = jwt.verify(token, "your-secret-key");
+    const decodedToken = jwt.verify(token, `${process.env.TOKEN_KEY}`);
     const userId = decodedToken.userId;
 
     const user = await User.findByPk(userId, {
@@ -61,7 +62,7 @@ router.get("/list", async (req, res) => {
 router.get("/list/month", async (req, res) => {
   const { month, year } = req.query;
   const token = req.headers.authorization.split(" ")[1];
-  const decodedToken = jwt.verify(token, "your-secret-key");
+  const decodedToken = jwt.verify(token, `${process.env.TOKEN_KEY}`);
   const userId = decodedToken.userId;
 
   try {
@@ -102,7 +103,7 @@ router.get("/list/month", async (req, res) => {
 router.delete("/delete/:eventId", async (req, res) => {
   const { eventId } = req.params;
   const token = req.headers.authorization.split(" ")[1];
-  const decodedToken = jwt.verify(token, "your-secret-key");
+  const decodedToken = jwt.verify(token, `${process.env.TOKEN_KEY}`);
   const userId = decodedToken.userId;
 
   try {

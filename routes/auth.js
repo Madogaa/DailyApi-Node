@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../models/User')
+require('dotenv').config();
 
 const router = express.Router();
 
@@ -8,7 +9,7 @@ router.get('/authenticate', async (req, res) => {
   try {
     // Obtener el ID del usuario desde el token
     const token = req.headers.authorization.split(' ')[1];
-    const decodedToken = jwt.verify(token, 'your-secret-key');
+    const decodedToken = jwt.verify(token, `${process.env.TOKEN_KEY}`);
     const userId = decodedToken.userId;
     const user = await User.findByPk(userId);
     if (!user) {
@@ -42,7 +43,7 @@ router.post('/register', async (req, res) => {
 
     const newUser = await User.create({ username, password });
 
-    const token = jwt.sign({ userId: newUser.id }, 'your-secret-key', {
+    const token = jwt.sign({ userId: newUser.id }, `${process.env.TOKEN_KEY}`, {
       expiresIn: '1h',
     });
 
@@ -75,7 +76,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid password' });
     }
 
-    const token = jwt.sign({ userId: user.id }, 'your-secret-key', {
+    const token = jwt.sign({ userId: user.id }, `${process.env.TOKEN_KEY}`, {
       expiresIn: '1h',
     });
 
