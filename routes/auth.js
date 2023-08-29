@@ -17,7 +17,6 @@ router.get('/authenticate', async (req, res) => {
     }
     const authorized = true;
     res.status(200).json({ authorized });
-    console.log('estamos permitiendo')
   } catch (err) {
     console.log(err.message);
     const authorized = false;
@@ -28,9 +27,26 @@ router.get('/authenticate', async (req, res) => {
 
 router.post('/register', async (req, res) => {
   try {
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[!@#$%^&*])(?=.{12,})/;
     const { username, password } = req.body;
-    await User.create({ username, password });
-    res.status(201).json({ message: 'User registered successfully.' });
+
+    const isValidPassword = passwordRegex.test(password);
+    if(!isValidPassword){
+      return res.status(401).json({ error: 'Password needs: 12 character of which min. 1 capital, lower and special' });
+    }
+
+    const existingUser = await User.findOne({ where: { username } });
+    if (existingUser) {
+      return res.status(409).json({ error: 'Username is already taken' });
+    }
+
+    const newUser = await User.create({ username, password });
+
+    const token = jwt.sign({ userId: newUser.id }, 'your-secret-key', {
+      expiresIn: '1h',
+    });
+
+    res.status(201).json({ token });
   } catch (error) {
     console.log(error.message)
     res.status(500).json({ error: 'Error registering user' + error.message });
@@ -51,12 +67,12 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ where: { username } });
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials. No user found with that Name' });
+      return res.status(401).json({ error: 'No user found with that Name' });
     }
 
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid credentials.' });
+      return res.status(401).json({ error: 'Invalid password' });
     }
 
     const token = jwt.sign({ userId: user.id }, 'your-secret-key', {
