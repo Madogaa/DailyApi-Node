@@ -4,7 +4,7 @@ const User = require("../models/User");
 const Event = require("../models/Event");
 const { Op } = require("sequelize");
 const dayjs = require("dayjs");
-require('dotenv').config();
+require("dotenv").config();
 
 const router = express.Router();
 
@@ -32,7 +32,7 @@ router.post("/create", async (req, res) => {
       userId: user.id,
     });
 
-    res.status(200).json({ createdEvent: event });
+    res.status(200).json({ error: "Event succesfully created!" ,createdEvent: event });
   } catch (error) {
     res.status(500).json({ error: "Error creating event." });
   }
@@ -115,13 +115,43 @@ router.delete("/delete/:eventId", async (req, res) => {
     });
 
     if (!event) {
-      return res.status(404).json({ message: "Evento no encontrado" });
+      return res.status(404).json({ error: "Event not found!" });
     }
 
     await event.destroy();
-    return res.status(200).json({ deletedEvent: event });
+    return res.status(200).json({error: "Event succesfully deleted!", deletedEvent: event });
   } catch (error) {
-    return res.status(500).json({ message: 'Error interno del servidor' });
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
+});
+
+router.post("/modify/:eventId", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { title, description, startDate, endDate } = req.body;
+    const token = req.headers.authorization.split(" ")[1];
+    const decodedToken = jwt.verify(token, `${process.env.TOKEN_KEY}`);
+    const user = await User.findByPk(decodedToken.userId);
+    if (!user) {
+      return res
+        .status(401)
+        .json({
+          error: "An error ocurred!",
+          desc: "Token user not found (Forbiden)",
+        });
+    }
+
+    const event = await Event.findByPk(eventId);
+    event.title = title || event.title;
+    event.description = description || event.description;
+    event.startDate = startDate || event.startDate;
+    event.endDate = endDate || event.endDate;
+    await event.save();
+
+    return res.status(200).json({ error: "Event Succesfully Modified!" , newEvent : event});
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({error: "An error ocured!", desc: error});
   }
 });
 
