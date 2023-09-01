@@ -28,7 +28,7 @@ router.post("/create", async (req, res) => {
       return res.status(401).json({ error: "Dead Line must be higher!" });
 
 
-    if(title || description || startDate || endDate)
+    if(!title || !description || !startDate || !endDate)
       return res.status(401).json({ error: "Complete de fields above!" });
 
     const event = await Event.create({
