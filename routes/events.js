@@ -20,9 +20,16 @@ router.post("/create", async (req, res) => {
 
     const user = await User.findByPk(userId);
 
-    if (!user) {
+    if (!user)
       return res.status(401).json({ error: "User not found." });
-    }
+
+
+    if (endDate < startDate)
+      return res.status(401).json({ error: "Dead Line must be higher!" });
+
+
+    if(title || description || startDate || endDate)
+      return res.status(401).json({ error: "Complete de fields above!" });
 
     const event = await Event.create({
       title,
@@ -32,7 +39,9 @@ router.post("/create", async (req, res) => {
       userId: user.id,
     });
 
-    res.status(200).json({ error: "Event succesfully created!" ,createdEvent: event });
+    res
+      .status(200)
+      .json({ error: "Event succesfully created!", createdEvent: event });
   } catch (error) {
     res.status(500).json({ error: "Error creating event." });
   }
@@ -119,7 +128,9 @@ router.delete("/delete/:eventId", async (req, res) => {
     }
 
     await event.destroy();
-    return res.status(200).json({error: "Event succesfully deleted!", deletedEvent: event });
+    return res
+      .status(200)
+      .json({ error: "Event succesfully deleted!", deletedEvent: event });
   } catch (error) {
     return res.status(500).json({ message: "Error interno del servidor" });
   }
@@ -133,12 +144,14 @@ router.post("/modify/:eventId", async (req, res) => {
     const decodedToken = jwt.verify(token, `${process.env.TOKEN_KEY}`);
     const user = await User.findByPk(decodedToken.userId);
     if (!user) {
-      return res
-        .status(401)
-        .json({
-          error: "An error ocurred!",
-          desc: "Token user not found (Forbiden)",
-        });
+      return res.status(401).json({
+        error: "An error ocurred!",
+        desc: "Token user not found (Forbiden)",
+      });
+    }
+
+    if (endDate < startDate) {
+      return res.status(401).json({ error: "Dead Line must be higher!" });
     }
 
     const event = await Event.findByPk(eventId);
@@ -148,10 +161,12 @@ router.post("/modify/:eventId", async (req, res) => {
     event.endDate = endDate || event.endDate;
     await event.save();
 
-    return res.status(200).json({ error: "Event Succesfully Modified!" , newEvent : event});
+    return res
+      .status(200)
+      .json({ error: "Event Succesfully Modified!", newEvent: event });
   } catch (error) {
-    console.log(error)
-    return res.status(500).json({error: "An error ocured!", desc: error});
+    console.log(error);
+    return res.status(500).json({ error: "An error ocured!", desc: error });
   }
 });
 
